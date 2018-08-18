@@ -23,11 +23,13 @@ namespace EdiZonDebugger
         string _configFolder = "config";
         string _saveFolder = "save";
 
-        string _saveFilePath = null;
-        string _luaScriptPath = null;
+        Dictionary<string, string> _saveFilePath = null;
+        Dictionary<string, string> _luaScriptPath = null;
 
-        EdiZonConfig _config = null;
-        LuaContext _luaInstance = null;
+        Dictionary<string, EdiZonConfig.VersionConfig> _config = null;
+        Dictionary<string, LuaContext> _luaInstance = null;
+
+        string _currentVersion = null;
 
         public Main(string file)
         {
@@ -73,26 +75,20 @@ namespace EdiZonDebugger
 
             if (sf.ShowDialog() == DialogResult.OK && File.Exists(sf.FileName))
             {
-                var save = Lua.GetModifiedSaveBuffer(_luaInstance);
+                var save = Lua.GetModifiedSaveBuffer(_luaInstance[_currentVersion]);
                 File.WriteAllBytes(sf.FileName, save);
             }
         }
 
+        private void versionComboBox_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            _currentVersion = (string)versionComboBox.SelectedItem;
+            UpdateCategories();
+        }
+
         private void categoriesListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            groupBox1.Controls.Clear();
-            groupBox1.Text = (string)categoriesListBox.SelectedItem;
-
-            var p = new Point(5, 20);
-
-            var panel = new Panel { AutoScroll = true, Location = p, Size = new Size(groupBox1.Width - p.X - 10, groupBox1.Height - p.Y - 10), Anchor = (AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right) };
-            groupBox1.Controls.Add(panel);
-
-            foreach (var item in _config.items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
-            {
-                AddItem(panel, item, p);
-                p = new Point(p.X, p.Y + 30);
-            }
+            UpdateItems();
         }
         #endregion
 
@@ -105,20 +101,59 @@ namespace EdiZonDebugger
             extractEditedSaveToolStripMenuItem.Enabled = opened;
             categoriesListBox.Enabled = opened;
             groupBox1.Enabled = opened;
+            versionComboBox.Enabled = opened;
+        }
+
+        private void UpdateVersions()
+        {
+            versionComboBox.SelectedIndexChanged -= versionComboBox_SelectedIndexChanged;
+
+            versionComboBox.Items.Clear();
+
+            foreach (var item in _config)
+                versionComboBox.Items.Add(item.Key);
+
+            versionComboBox.SelectedIndexChanged += versionComboBox_SelectedIndexChanged;
+            versionComboBox.SelectedIndex = 0;
         }
 
         private void UpdateCategories()
         {
             categoriesListBox.SelectedIndexChanged -= categoriesListBox_SelectedIndexChanged;
+
             categoriesListBox.Items.Clear();
 
-            if (_config.items.Any(i => i.category == null))
+            if (_config[_currentVersion].items.Any(i => i.category == null))
                 categoriesListBox.Items.Add("No Category");
 
-            foreach (var cat in _config.items.Where(i => i.category != null).Select(i => i.category).Distinct())
+            foreach (var cat in _config[_currentVersion].items.Where(i => i.category != null).Select(i => i.category).Distinct())
                 categoriesListBox.Items.Add(cat);
 
             categoriesListBox.SelectedIndexChanged += categoriesListBox_SelectedIndexChanged;
+            categoriesListBox.SelectedIndex = 0;
+        }
+
+        private void UpdateItems()
+        {
+            groupBox1.Controls.Clear();
+            groupBox1.Text = (string)categoriesListBox.SelectedItem;
+
+            var p = new Point(5, 20);
+
+            var panel = new Panel
+            {
+                AutoScroll = true,
+                Location = p,
+                Size = new Size(groupBox1.Width - p.X - 10, groupBox1.Height - p.Y - 10),
+                Anchor = (AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right)
+            };
+            groupBox1.Controls.Add(panel);
+
+            foreach (var item in _config[_currentVersion].items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
+            {
+                AddItem(panel, item, p);
+                p = new Point(p.X, p.Y + 30);
+            }
         }
 
         private void CloseConfig()
@@ -132,6 +167,7 @@ namespace EdiZonDebugger
             groupBox1.Text = "";
 
             categoriesListBox.Items.Clear();
+            versionComboBox.Items.Clear();
 
             UpdateUI();
         }
@@ -146,49 +182,65 @@ namespace EdiZonDebugger
                 CloseConfig();
                 return;
             }
-            if (!OpenSaveFile(out error))
+            foreach (var item in _config)
             {
-                LogConsole.Instance.Log("Failed to load save file: " + error, LogLevel.FATAL);
-                CloseConfig();
-                return;
-            }
-            if (!OpenScript(out error))
-            {
-                LogConsole.Instance.Log("Failed to load script file: " + error, LogLevel.FATAL);
-                CloseConfig();
-                return;
+                _currentVersion = item.Key;
+
+                if (!OpenSaveFile(out error))
+                {
+                    LogConsole.Instance.Log($"Failed to load save file for version \"{item.Key}\":" + error, LogLevel.FATAL);
+                    CloseConfig();
+                    return;
+                }
+                if (!OpenScript(out error))
+                {
+                    LogConsole.Instance.Log($"Failed to load script file for version \"{item.Key}\":" + error, LogLevel.FATAL);
+                    CloseConfig();
+                    return;
+                }
             }
 
             UpdateUI();
-            UpdateCategories();
+            UpdateVersions();
         }
 
-        private bool OpenConfig(string file, out string message)
+        private bool OpenConfig(string file, out string message, List<string> searchedJsons = null)
         {
-            if (Support.TryParseJObject<EdiZonConfig>(File.ReadAllText(file), out var obj, out message))
+            var content = File.ReadAllText(file);
+            if (Support.IsUsingInstead(content, out var config))
             {
-                _config = obj;
-                return true;
+                var combPath = Path.Combine(_configFolder, config.useInstead);
+
+                if (searchedJsons == null)
+                    searchedJsons = new List<string>();
+
+                if (!searchedJsons.Contains(combPath))
+                {
+                    searchedJsons.Add(combPath);
+                    return OpenConfig(combPath, out message, searchedJsons);
+                }
+                else
+                {
+                    message = "UseInstead loop detected.";
+                    return false;
+                }
             }
 
-            return false;
+            return Support.TryParseConfig(content, out _config, out message);
         }
 
         private bool OpenSaveFile(out string message)
         {
             message = "";
 
-            if (_config == null || _config.filetype == null)
-            {
-                message = "Config not set";
+            if (!CheckConfig(out message))
                 return false;
-            }
 
             //Get directories
             var paths = new List<string> { _saveFolder };
-            if (_config.saveFilePaths.Count > 0)
+            if (_config[_currentVersion].saveFilePaths.Count > 0)
             {
-                paths.AddRange(GetSavePaths(_saveFolder).ToList());
+                paths.AddRange(GetSavePaths(_saveFolder, _config[_currentVersion].saveFilePaths.ToArray()).ToList());
                 if (!paths.Any())
                 {
                     message = "No directories found.";
@@ -197,21 +249,24 @@ namespace EdiZonDebugger
             }
 
             //Get files
-            var files = GetSaveFiles(paths).ToList();
+            var files = GetSaveFiles(paths.ToArray(), _config[_currentVersion].files).ToList();
             if (!files.Any())
             {
                 message = "No files found.";
                 return false;
             }
 
+            if (_saveFilePath == null)
+                _saveFilePath = new Dictionary<string, string>();
+
             if (files.Count == 1)
-                _saveFilePath = files[0];
+                _saveFilePath.Add(_currentVersion, files[0]);
             else
             {
                 var selector = new SaveSelector(files.ToArray());
                 selector.ShowDialog();
                 if (selector.ProperExit)
-                    _saveFilePath = selector.SelectedFile;
+                    _saveFilePath.Add(_currentVersion, selector.SelectedFile);
                 else
                 {
                     message = "No file selected.";
@@ -222,30 +277,30 @@ namespace EdiZonDebugger
             return true;
         }
 
-        private IEnumerable<string> GetSavePaths(string currentPath, int depth = 0)
+        private IEnumerable<string> GetSavePaths(string currentPath, string[] saveFilePaths, int depth = 0)
         {
             var tmp = new List<string>();
             foreach (var d in Directory.GetDirectories(currentPath))
             {
                 var dirName = d.Split('\\').Last();
-                if (Regex.IsMatch(dirName, _config.saveFilePaths[depth]))
+                if (Regex.IsMatch(dirName, saveFilePaths[depth]))
                     tmp.Add(Path.Combine(currentPath, dirName));
             }
 
-            if (depth + 1 >= _config.saveFilePaths.Count)
+            if (depth + 1 >= saveFilePaths.Length)
                 return tmp;
 
             var result = new List<string>();
             foreach (var rp in tmp)
-                result.AddRange(GetSavePaths(rp, depth + 1) ?? new List<string>());
+                result.AddRange(GetSavePaths(rp, saveFilePaths, depth + 1) ?? new List<string>());
 
             return result;
         }
-        private IEnumerable<string> GetSaveFiles(List<string> paths)
+        private IEnumerable<string> GetSaveFiles(string[] paths, string files)
         {
             foreach (var path in paths)
                 foreach (var file in Directory.GetFiles(path))
-                    if (Regex.IsMatch(file, _config.files))
+                    if (Regex.IsMatch(file, files))
                         yield return file;
         }
 
@@ -253,11 +308,8 @@ namespace EdiZonDebugger
         {
             message = "";
 
-            if (_config == null || _config.filetype == null)
-            {
-                message = "Config not set";
+            if (!CheckConfig(out message))
                 return false;
-            }
 
             if (!SetScriptPath())
             {
@@ -265,32 +317,67 @@ namespace EdiZonDebugger
                 return false;
             }
 
-            if (!Lua.InitializeScript(ref _luaInstance, _luaScriptPath, _saveFilePath, out var error))
+            if (_luaInstance == null)
+                _luaInstance = new Dictionary<string, LuaContext>();
+
+            var context = new LuaContext();
+            if (!Lua.InitializeScript(ref context, _luaScriptPath[_currentVersion], _saveFilePath[_currentVersion], out var error))
             {
                 message = error;
                 return false;
             }
 
+            _luaInstance.Add(_currentVersion, context);
             return true;
         }
         private bool SetScriptPath()
         {
-            _luaScriptPath = Path.Combine(_scriptFolder, $"{_config.filetype}.lua");
-            if (!File.Exists(_luaScriptPath))
+            if (_luaScriptPath == null)
+                _luaScriptPath = new Dictionary<string, string>();
+
+            var path = Path.Combine(_scriptFolder, $"{_config[_currentVersion].filetype}.lua");
+
+            if (!File.Exists(path))
             {
                 LogConsole.Instance.Log($"{_luaScriptPath} cannot be found. Choose a script yourself.", LogLevel.WARNING);
 
                 var of = new OpenFileDialog();
                 of.Filter = "(*.lua)|*.lua";
                 if (of.ShowDialog() == DialogResult.OK && File.Exists(of.FileName))
-                    _luaScriptPath = of.FileName;
+                    _luaScriptPath.Add(_currentVersion, of.FileName);
                 else return false;
+            }
+            else
+            {
+                _luaScriptPath.Add(_currentVersion, path);
             }
 
             return true;
         }
 
-        private void AddItem(Panel panel, EdiZonConfig.Item item, Point initPoint)
+        private bool CheckConfig(out string message)
+        {
+            if (_config == null)
+            {
+                message = "Config not set";
+                return false;
+            }
+            if (!_config.ContainsKey(_currentVersion))
+            {
+                message = "Version doesn't exist";
+                return false;
+            }
+            if (_config[_currentVersion].filetype == null)
+            {
+                message = "FileType not set";
+                return false;
+            }
+
+            message = "";
+            return true;
+        }
+
+        private void AddItem(Panel panel, EdiZonConfig.VersionConfig.Item item, Point initPoint)
         {
             var label = new Label { Text = item.name + ":", Location = initPoint };
             panel.Controls.Add(label);
@@ -298,7 +385,7 @@ namespace EdiZonDebugger
             initPoint = new Point(initPoint.X + label.Width + 10, initPoint.Y);
 
             Control itemControl = null;
-            var luaValue = Lua.GetValueFromSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray());
+            var luaValue = Lua.GetValueFromSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray());
             bool validItem = true;
             switch (item.widget.type)
             {
@@ -351,7 +438,7 @@ namespace EdiZonDebugger
         }
         private void SetValue_OnChange(object sender, EventArgs e)
         {
-            var item = (EdiZonConfig.Item)((Control)sender).Tag;
+            var item = (EdiZonConfig.VersionConfig.Item)((Control)sender).Tag;
             switch (sender)
             {
                 case TextBox textBox:
@@ -360,22 +447,22 @@ namespace EdiZonDebugger
                     if (!String.IsNullOrEmpty(textBox.Text) && textBox.Text.IsNumeric())
                     {
                         textBox.Text = Math.Min(Math.Max(Convert.ToInt32(textBox.Text), item.widget.minValue), item.widget.maxValue).ToString();
-                        Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
+                        Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
                     }
                     else if (!textBox.Text.IsNumeric())
                     {
                         LogConsole.Instance.Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
                         textBox.Text = item.widget.minValue.ToString();
-                        Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
+                        Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
                     }
 
                     textBox.TextChanged += SetValue_OnChange;
                     break;
                 case ComboBox comboBox:
-                    Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), comboBox.Enabled ? item.widget.onValue : item.widget.offValue);
+                    Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), comboBox.Enabled ? item.widget.onValue : item.widget.offValue);
                     break;
                 case ListBox listBox:
-                    Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.listItemValues[listBox.SelectedIndex]);
+                    Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.listItemValues[listBox.SelectedIndex]);
                     break;
             }
         }

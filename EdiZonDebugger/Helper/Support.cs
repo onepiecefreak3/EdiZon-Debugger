@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using Newtonsoft.Json;
 
+using EdiZonDebugger.Models;
+
 namespace EdiZonDebugger
 {
     public static class Support
@@ -49,6 +51,36 @@ namespace EdiZonDebugger
                 message = e.Message;
                 return false;
             }
+
+            return true;
+        }
+
+        public static bool IsUsingInstead(string content, out EdiZonConfig config)
+        {
+            config = new EdiZonConfig();
+
+            try
+            {
+                config = JsonConvert.DeserializeObject<EdiZonConfig>(content);
+                return !String.IsNullOrEmpty(config.useInstead);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static bool TryParseConfig(string content, out Dictionary<string, EdiZonConfig.VersionConfig> config, out string message)
+        {
+            message = "";
+
+            if (!TryParseJObject(content, out config, out message))
+                return false;
+
+            config = new Dictionary<string, EdiZonConfig.VersionConfig>();
+            foreach (var obj in JObject.Parse(content))
+                if (obj.Key != "useInstead")
+                    config.Add(obj.Key, obj.Value.ToObject<EdiZonConfig.VersionConfig>());
 
             return true;
         }

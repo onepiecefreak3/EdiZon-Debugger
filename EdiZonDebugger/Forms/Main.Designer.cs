@@ -38,6 +38,7 @@
             this.groupBox1 = new System.Windows.Forms.GroupBox();
             this.errorTextBox = new System.Windows.Forms.RichTextBox();
             this.label1 = new System.Windows.Forms.Label();
+            this.versionComboBox = new System.Windows.Forms.ComboBox();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -87,9 +88,9 @@
             this.categoriesListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.categoriesListBox.FormattingEnabled = true;
-            this.categoriesListBox.Location = new System.Drawing.Point(12, 27);
+            this.categoriesListBox.Location = new System.Drawing.Point(12, 53);
             this.categoriesListBox.Name = "categoriesListBox";
-            this.categoriesListBox.Size = new System.Drawing.Size(120, 264);
+            this.categoriesListBox.Size = new System.Drawing.Size(120, 238);
             this.categoriesListBox.TabIndex = 1;
             this.categoriesListBox.SelectedIndexChanged += new System.EventHandler(this.categoriesListBox_SelectedIndexChanged);
             // 
@@ -127,11 +128,21 @@
             this.label1.TabIndex = 4;
             this.label1.Text = "Console:";
             // 
+            // versionComboBox
+            // 
+            this.versionComboBox.FormattingEnabled = true;
+            this.versionComboBox.Location = new System.Drawing.Point(12, 27);
+            this.versionComboBox.Name = "versionComboBox";
+            this.versionComboBox.Size = new System.Drawing.Size(121, 21);
+            this.versionComboBox.TabIndex = 5;
+            this.versionComboBox.SelectedIndexChanged += new System.EventHandler(this.versionComboBox_SelectedIndexChanged);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 300);
+            this.Controls.Add(this.versionComboBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.errorTextBox);
             this.Controls.Add(this.groupBox1);
@@ -159,6 +170,7 @@
         private System.Windows.Forms.RichTextBox errorTextBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ToolStripMenuItem extractEditedSaveToolStripMenuItem;
+        private System.Windows.Forms.ComboBox versionComboBox;
     }
 }
 
