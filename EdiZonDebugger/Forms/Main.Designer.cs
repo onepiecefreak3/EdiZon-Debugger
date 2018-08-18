@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Main));
             this.menuStrip1 = new System.Windows.Forms.MenuStrip();
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.openToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -63,26 +64,28 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.openToolStripMenuItem.Text = "&Open Config";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.closeToolStripMenuItem.Text = "&Close Config";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
             // extractEditedSaveToolStripMenuItem
             // 
             this.extractEditedSaveToolStripMenuItem.Name = "extractEditedSaveToolStripMenuItem";
-            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.extractEditedSaveToolStripMenuItem.Text = "&Extract Edited Save";
             this.extractEditedSaveToolStripMenuItem.Click += new System.EventHandler(this.extractEditedSaveToolStripMenuItem_Click);
             // 
             // categoriesListBox
             // 
+            this.categoriesListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.categoriesListBox.FormattingEnabled = true;
             this.categoriesListBox.Location = new System.Drawing.Point(12, 27);
             this.categoriesListBox.Name = "categoriesListBox";
@@ -92,6 +95,8 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left)));
             this.groupBox1.Location = new System.Drawing.Point(138, 27);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(318, 264);
@@ -100,8 +105,15 @@
             // 
             // errorTextBox
             // 
+            this.errorTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.errorTextBox.BackColor = System.Drawing.SystemColors.Desktop;
+            this.errorTextBox.Font = new System.Drawing.Font("Courier New", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.errorTextBox.ForeColor = System.Drawing.SystemColors.Window;
             this.errorTextBox.Location = new System.Drawing.Point(462, 43);
             this.errorTextBox.Name = "errorTextBox";
+            this.errorTextBox.ReadOnly = true;
             this.errorTextBox.Size = new System.Drawing.Size(326, 248);
             this.errorTextBox.TabIndex = 0;
             this.errorTextBox.Text = "";
@@ -111,9 +123,9 @@
             this.label1.AutoSize = true;
             this.label1.Location = new System.Drawing.Point(462, 27);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(37, 13);
+            this.label1.Size = new System.Drawing.Size(48, 13);
             this.label1.TabIndex = 4;
-            this.label1.Text = "Errors:";
+            this.label1.Text = "Console:";
             // 
             // Main
             // 
@@ -125,6 +137,7 @@
             this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.categoriesListBox);
             this.Controls.Add(this.menuStrip1);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip1;
             this.Name = "Main";
             this.Text = "EdiZon Debugger";

@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
 using vJine.Lua;
+using System.Media;
 
 namespace EdiZonDebugger
 {
@@ -58,13 +59,15 @@ namespace EdiZonDebugger
             of.InitialDirectory = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _configFolder);
 
             if (of.ShowDialog() == DialogResult.OK && File.Exists(of.FileName))
+            {
+                errorTextBox.Clear();
                 InitDebugger(of.FileName);
+            }
         }
 
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CloseConfig();
-            UpdateUI();
         }
 
         private void extractEditedSaveToolStripMenuItem_Click(object sender, EventArgs e)
@@ -80,14 +83,12 @@ namespace EdiZonDebugger
 
         private void categoriesListBox_SelectedIndexChanged(object sender, EventArgs e)
         {
-            errorTextBox.Clear();
-
             groupBox1.Controls.Clear();
             groupBox1.Text = (string)categoriesListBox.SelectedItem;
 
             var p = new Point(5, 20);
 
-            var panel = new Panel { AutoScroll = true, Location = p, Size = new Size(groupBox1.Width - p.X - 10, groupBox1.Height - p.Y - 10) };
+            var panel = new Panel { AutoScroll = true, Location = p, Size = new Size(groupBox1.Width - p.X - 10, groupBox1.Height - p.Y - 10), Anchor = (AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right) };
             groupBox1.Controls.Add(panel);
 
             foreach (var item in _config.items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
@@ -107,7 +108,6 @@ namespace EdiZonDebugger
             extractEditedSaveToolStripMenuItem.Enabled = opened;
             categoriesListBox.Enabled = opened;
             groupBox1.Enabled = opened;
-            errorTextBox.Enabled = opened;
         }
 
         private void UpdateCategories()
@@ -136,26 +136,26 @@ namespace EdiZonDebugger
 
             categoriesListBox.Items.Clear();
 
-            errorTextBox.Clear();
+            UpdateUI();
         }
 
         private void InitDebugger(string configName)
         {
             if (!OpenConfig(configName, out var error))
             {
-                MessageBox.Show(error, "Config error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Log("Failed to load config file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
             if (!OpenSaveFile(out error))
             {
-                MessageBox.Show(error, "Savefile error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Log("Failed to load save file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
             if (!OpenScript(out error))
             {
-                MessageBox.Show(error, "Script error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                Log("Failed to load script file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
@@ -222,6 +222,7 @@ namespace EdiZonDebugger
 
             return true;
         }
+
         private IEnumerable<string> GetSavePaths(string currentPath, int depth = 0)
         {
             var tmp = new List<string>();
@@ -265,7 +266,7 @@ namespace EdiZonDebugger
                 return false;
             }
 
-            if (!Lua.InitializeScript(ref _luaInstance, _luaScriptPath, _saveFilePath, out var error))
+            if (!Lua.InitializeScript(ref _luaInstance, Log, _luaScriptPath, _saveFilePath, out var error))
             {
                 message = error;
                 return false;
@@ -278,7 +279,7 @@ namespace EdiZonDebugger
             _luaScriptPath = Path.Combine(_scriptFolder, $"{_config.filetype}.lua");
             if (!File.Exists(_luaScriptPath))
             {
-                MessageBox.Show($"{_luaScriptPath} cannot be found. Choose a script yourself.", "Script not found", MessageBoxButtons.OK);
+                Log($"{_luaScriptPath} cannot be found. Choose a script yourself.", LogLevel.WARNING);
 
                 var of = new OpenFileDialog();
                 of.Filter = "(*.lua)|*.lua";
@@ -364,7 +365,7 @@ namespace EdiZonDebugger
                     }
                     else if (!textBox.Text.IsNumeric())
                     {
-                        MessageBox.Show($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", "Invalid input", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                        Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
                         textBox.Text = item.widget.minValue.ToString();
                         Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
                     }
@@ -379,6 +380,41 @@ namespace EdiZonDebugger
                     break;
             }
         }
+
+        public enum LogLevel
+        {
+            INFO,
+            LUA,
+            WARNING,
+            ERROR,
+            FATAL
+        }
+
+        private void Log(string message, LogLevel level)
+        {
+            switch(level)
+            {
+                case LogLevel.INFO:
+                    errorTextBox.AppendText("[INFO] " + message + "\n", Color.White);
+                    break;
+                case LogLevel.LUA:
+                    errorTextBox.AppendText("[LUA] " + message + "\n", Color.LightBlue);
+                    break;
+                case LogLevel.WARNING:
+                    errorTextBox.AppendText("[WARNING] " + message + "\n", Color.Orange);
+                    SystemSounds.Asterisk.Play();
+                    break;
+                case LogLevel.ERROR:
+                    errorTextBox.AppendText("[ERROR] " + message + "\n", Color.IndianRed);
+                    SystemSounds.Exclamation.Play();
+                    break;
+                case LogLevel.FATAL:
+                    errorTextBox.AppendText("[FATAL] " + message + "\n", Color.Red);
+                    SystemSounds.Hand.Play();
+                    break;
+            }
+        }
+
         #endregion
     }
 }
