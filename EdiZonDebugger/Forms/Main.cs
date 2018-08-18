@@ -186,11 +186,15 @@ namespace EdiZonDebugger
             }
 
             //Get directories
-            var paths = GetSavePaths(_saveFolder).ToList();
-            if (!paths.Any())
+            var paths = new List<string> { _saveFolder };
+            if (_config.saveFilePaths.Count > 0)
             {
-                message = "No directories found.";
-                return false;
+                paths.AddRange(GetSavePaths(_saveFolder).ToList());
+                if (!paths.Any())
+                {
+                    message = "No directories found.";
+                    return false;
+                }
             }
 
             //Get files
