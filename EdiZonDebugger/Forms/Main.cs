@@ -11,12 +11,9 @@ using System.IO;
 using System.Text.RegularExpressions;
 
 using EdiZonDebugger.Models;
-
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using EdiZonDebugger.Helper;
 
 using vJine.Lua;
-using System.Media;
 
 namespace EdiZonDebugger
 {
@@ -93,7 +90,7 @@ namespace EdiZonDebugger
 
             foreach (var item in _config.items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
             {
-                AddItem(panel, errorTextBox, item, p);
+                AddItem(panel, item, p);
                 p = new Point(p.X, p.Y + 30);
             }
         }
@@ -141,21 +138,23 @@ namespace EdiZonDebugger
 
         private void InitDebugger(string configName)
         {
+            LogConsole.LogBox = errorTextBox;
+
             if (!OpenConfig(configName, out var error))
             {
-                Log("Failed to load config file: " + error, LogLevel.FATAL);
+                LogConsole.Instance.Log("Failed to load config file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
             if (!OpenSaveFile(out error))
             {
-                Log("Failed to load save file: " + error, LogLevel.FATAL);
+                LogConsole.Instance.Log("Failed to load save file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
             if (!OpenScript(out error))
             {
-                Log("Failed to load script file: " + error, LogLevel.FATAL);
+                LogConsole.Instance.Log("Failed to load script file: " + error, LogLevel.FATAL);
                 CloseConfig();
                 return;
             }
@@ -266,7 +265,7 @@ namespace EdiZonDebugger
                 return false;
             }
 
-            if (!Lua.InitializeScript(ref _luaInstance, Log, _luaScriptPath, _saveFilePath, out var error))
+            if (!Lua.InitializeScript(ref _luaInstance, _luaScriptPath, _saveFilePath, out var error))
             {
                 message = error;
                 return false;
@@ -279,7 +278,7 @@ namespace EdiZonDebugger
             _luaScriptPath = Path.Combine(_scriptFolder, $"{_config.filetype}.lua");
             if (!File.Exists(_luaScriptPath))
             {
-                Log($"{_luaScriptPath} cannot be found. Choose a script yourself.", LogLevel.WARNING);
+                LogConsole.Instance.Log($"{_luaScriptPath} cannot be found. Choose a script yourself.", LogLevel.WARNING);
 
                 var of = new OpenFileDialog();
                 of.Filter = "(*.lua)|*.lua";
@@ -291,7 +290,7 @@ namespace EdiZonDebugger
             return true;
         }
 
-        private void AddItem(Panel panel, RichTextBox error, EdiZonConfig.Item item, Point initPoint)
+        private void AddItem(Panel panel, EdiZonConfig.Item item, Point initPoint)
         {
             var label = new Label { Text = item.name + ":", Location = initPoint };
             panel.Controls.Add(label);
@@ -343,7 +342,7 @@ namespace EdiZonDebugger
                     break;
             }
             if (!validItem)
-                error.Text += $"Item \"{item.name}\"{((String.IsNullOrEmpty(item.category)) ? "" : $" in Category \"{item.category}\"")} of type \"{item.widget.type}\" has an invalid value of {luaValue.ToString()}.\"\r\n";
+                LogConsole.Instance.Log($"Item \"{item.name}\"{((String.IsNullOrEmpty(item.category)) ? "" : $" in Category \"{item.category}\"")} of type \"{item.widget.type}\" has an invalid value of {luaValue.ToString()}.\"\r\n", LogLevel.ERROR);
 
             itemControl.Tag = item;
             itemControl.Location = initPoint;
@@ -365,7 +364,7 @@ namespace EdiZonDebugger
                     }
                     else if (!textBox.Text.IsNumeric())
                     {
-                        Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
+                        LogConsole.Instance.Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
                         textBox.Text = item.widget.minValue.ToString();
                         Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
                     }
@@ -377,40 +376,6 @@ namespace EdiZonDebugger
                     break;
                 case ListBox listBox:
                     Lua.SetValueInSaveFile(_luaInstance, item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.listItemValues[listBox.SelectedIndex]);
-                    break;
-            }
-        }
-
-        public enum LogLevel
-        {
-            INFO,
-            LUA,
-            WARNING,
-            ERROR,
-            FATAL
-        }
-
-        private void Log(string message, LogLevel level)
-        {
-            switch(level)
-            {
-                case LogLevel.INFO:
-                    errorTextBox.AppendText("[INFO] " + message + "\n", Color.White);
-                    break;
-                case LogLevel.LUA:
-                    errorTextBox.AppendText("[LUA] " + message + "\n", Color.LightBlue);
-                    break;
-                case LogLevel.WARNING:
-                    errorTextBox.AppendText("[WARNING] " + message + "\n", Color.Orange);
-                    SystemSounds.Asterisk.Play();
-                    break;
-                case LogLevel.ERROR:
-                    errorTextBox.AppendText("[ERROR] " + message + "\n", Color.IndianRed);
-                    SystemSounds.Exclamation.Play();
-                    break;
-                case LogLevel.FATAL:
-                    errorTextBox.AppendText("[FATAL] " + message + "\n", Color.Red);
-                    SystemSounds.Hand.Play();
                     break;
             }
         }

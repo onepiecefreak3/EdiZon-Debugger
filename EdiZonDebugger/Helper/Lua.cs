@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using vJine.Lua;
 using System.IO;
 
+using EdiZonDebugger.Helper;
+
 namespace EdiZonDebugger
 {
     public static class Lua
     {
-        public delegate void LogFunc(string message, Main.LogLevel level);
-
-        public static bool InitializeScript(ref LuaContext luaContext, LogFunc logFunc, string luaFile, string saveFile, out string message)
+        public static bool InitializeScript(ref LuaContext luaContext, string luaFile, string saveFile, out string message)
         {
             message = String.Empty;
 
@@ -21,7 +21,7 @@ namespace EdiZonDebugger
                 luaContext = new LuaContext();
                 luaContext.reg("edizon.getSaveFileBuffer", getSaveFileBuffer(saveFile));
                 luaContext.reg("edizon.getSaveFileString", getSaveFileString(saveFile));
-                luaContext.reg("print", new Action<string>((string s) => logFunc(s, Main.LogLevel.LUA)));
+                luaContext.reg("print", Print());
                 luaContext.load(luaFile);
             }
             catch (Exception e)
@@ -36,11 +36,6 @@ namespace EdiZonDebugger
 
             return true;
         }
-
-        //public static void RegisterSaveBuffer(ref LuaContext luaContext, string saveFile)
-        //{
-        //    luaContext.reg("edizon.getSaveFileBuffer", getSaveFileBuffer(saveFile));
-        //}
 
         #region Script functions
         public static object GetValueFromSaveFile(LuaContext luaContext, string[] strArgs, int[] intArgs)
@@ -70,6 +65,14 @@ namespace EdiZonDebugger
         #endregion
 
         #region Delegates
+        private static Action<string> Print()
+        {
+            return new Action<string>((string s) =>
+            {
+                LogConsole.Instance.Log(s, LogLevel.LUA);
+            });
+        }
+
         private static Func<byte[]> getSaveFileBuffer(string saveFile)
         {
             return new Func<byte[]>(() =>

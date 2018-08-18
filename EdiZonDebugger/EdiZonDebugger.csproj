@@ -112,6 +112,7 @@
     <Compile Include="Forms\Main.Designer.cs">
       <DependentUpon>Main.cs</DependentUpon>
     </Compile>
+    <Compile Include="Helper\Log.cs" />
     <Compile Include="Helper\Lua.cs" />
     <Compile Include="Helper\Support.cs" />
     <Compile Include="Models\EdiZonConfig.cs" />
