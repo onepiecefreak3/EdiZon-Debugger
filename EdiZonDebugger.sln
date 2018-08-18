@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EdiZonDebugger", "EdiZonDebugger\EdiZonDebugger.csproj", "{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Debug|x86 = Debug|x86
+		Release|Any CPU = Release|Any CPU
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Debug|x86.Build.0 = Debug|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Release|x86.ActiveCfg = Release|Any CPU
+		{1BD76A12-E4BA-4634-BEB0-031C1F7158DC}.Release|x86.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {128D1E23-CCDC-428C-AF5C-0DD9396A21B8}
+	EndGlobalSection
+EndGlobal
