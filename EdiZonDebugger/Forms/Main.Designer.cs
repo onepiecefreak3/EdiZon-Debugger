@@ -65,21 +65,22 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.openToolStripMenuItem.Text = "&Open Config";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.closeToolStripMenuItem.Text = "&Close Config";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
             // extractEditedSaveToolStripMenuItem
             // 
+            this.extractEditedSaveToolStripMenuItem.Enabled = false;
             this.extractEditedSaveToolStripMenuItem.Name = "extractEditedSaveToolStripMenuItem";
-            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
+            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.extractEditedSaveToolStripMenuItem.Text = "&Extract Edited Save";
             this.extractEditedSaveToolStripMenuItem.Click += new System.EventHandler(this.extractEditedSaveToolStripMenuItem_Click);
             // 

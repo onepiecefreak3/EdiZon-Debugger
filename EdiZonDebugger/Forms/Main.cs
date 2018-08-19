@@ -71,13 +71,13 @@ namespace EdiZonDebugger
 
         private void extractEditedSaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            var sf = new SaveFileDialog();
+            //var sf = new SaveFileDialog();
 
-            if (sf.ShowDialog() == DialogResult.OK && File.Exists(sf.FileName))
-            {
-                var save = Lua.GetModifiedSaveBuffer(_luaInstance[_currentVersion]);
-                File.WriteAllBytes(sf.FileName, save);
-            }
+            //if (sf.ShowDialog() == DialogResult.OK)
+            //{
+            //    var save = Lua.GetModifiedSaveBuffer(_luaInstance[_currentVersion]);
+            //    File.WriteAllBytes(sf.FileName, save);
+            //}
         }
 
         private void versionComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -98,7 +98,7 @@ namespace EdiZonDebugger
             var opened = _config != null && _luaInstance != null;
 
             closeToolStripMenuItem.Enabled = opened;
-            extractEditedSaveToolStripMenuItem.Enabled = opened;
+            //extractEditedSaveToolStripMenuItem.Enabled = opened;
             categoriesListBox.Enabled = opened;
             groupBox1.Enabled = opened;
             versionComboBox.Enabled = opened;
@@ -321,7 +321,7 @@ namespace EdiZonDebugger
                 _luaInstance = new Dictionary<string, LuaContext>();
 
             var context = new LuaContext();
-            if (!Lua.InitializeScript(ref context, _luaScriptPath[_currentVersion], _saveFilePath[_currentVersion], out var error))
+            if (!Lua.InitializeScript(ref context, _luaScriptPath[_currentVersion], _saveFilePath[_currentVersion], _config[_currentVersion].encoding, out var error))
             {
                 message = error;
                 return false;
@@ -385,29 +385,37 @@ namespace EdiZonDebugger
             initPoint = new Point(initPoint.X + label.Width + 10, initPoint.Y);
 
             Control itemControl = null;
-            var luaValue = Lua.GetValueFromSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray());
+
+            var luaValue = Convert.ToUInt32(Lua.GetValueFromSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray()));
+            if (item.widget.postEquationInverse != null)
+                luaValue = Convert.ToUInt32(Lua.ExecuteCalculation(item.widget.postEquationInverse, luaValue));
+
             bool validItem = true;
             switch (item.widget.type)
             {
                 case "int":
-                    validItem = item.widget.minValue <= Convert.ToUInt32(luaValue) && Convert.ToUInt32(luaValue) <= item.widget.maxValue;
+                    validItem = item.widget.minValue <= luaValue && luaValue <= item.widget.maxValue;
 
                     itemControl = new TextBox
                     {
-                        Text = validItem ? Convert.ToString(luaValue) : "???",
-                        Enabled = validItem
+                        Text = validItem ? item.widget.preEquation != null ? Lua.ExecuteCalculation(item.widget.preEquation, luaValue).ToString() : luaValue.ToString() : "???",
+                        Enabled = validItem,
+                        ReadOnly = true
                     };
-
+                    (itemControl as TextBox).Tag = new List<object>();
                     if (validItem)
-                        (itemControl as TextBox).TextChanged += SetValue_OnChange;
+                    {
+                        (itemControl as TextBox).KeyDown += TextBox_OnPress;
+                        ((itemControl as TextBox).Tag as List<object>).Add(luaValue);
+                    }
                     break;
                 case "bool":
-                    validItem = item.widget.onValue == Convert.ToUInt32(luaValue) || item.widget.offValue == Convert.ToUInt32(luaValue);
+                    validItem = item.widget.onValue == luaValue || item.widget.offValue == luaValue;
 
                     itemControl = new CheckBox
                     {
                         Text = (validItem) ? "" : "???",
-                        Checked = Convert.ToInt32(luaValue) == item.widget.onValue,
+                        Checked = luaValue == item.widget.onValue,
                         Enabled = validItem
                     };
 
@@ -415,12 +423,12 @@ namespace EdiZonDebugger
                         (itemControl as CheckBox).CheckedChanged += SetValue_OnChange;
                     break;
                 case "list":
-                    validItem = item.widget.listItemValues.Contains(Convert.ToUInt32(luaValue));
+                    validItem = item.widget.listItemValues.Contains(luaValue);
 
                     itemControl = new ComboBox
                     {
                         DataSource = (validItem) ? item.widget.listItemNames : new List<string> { "???" },
-                        SelectedIndex = item.widget.listItemValues.IndexOf(Convert.ToUInt32(luaValue)),
+                        SelectedIndex = item.widget.listItemValues.IndexOf(luaValue),
                         Enabled = validItem
                     };
 
@@ -431,7 +439,10 @@ namespace EdiZonDebugger
             if (!validItem)
                 LogConsole.Instance.Log($"Item \"{item.name}\"{((String.IsNullOrEmpty(item.category)) ? "" : $" in Category \"{item.category}\"")} of type \"{item.widget.type}\" has an invalid value of {luaValue.ToString()}.\"\r\n", LogLevel.ERROR);
 
-            itemControl.Tag = item;
+            if (itemControl is TextBox)
+                (itemControl.Tag as List<object>).Add(item);
+            else
+                itemControl.Tag = item;
             itemControl.Location = initPoint;
 
             panel.Controls.Add(itemControl);
@@ -441,23 +452,6 @@ namespace EdiZonDebugger
             var item = (EdiZonConfig.VersionConfig.Item)((Control)sender).Tag;
             switch (sender)
             {
-                case TextBox textBox:
-                    textBox.TextChanged -= SetValue_OnChange;
-
-                    if (!String.IsNullOrEmpty(textBox.Text) && textBox.Text.IsNumeric())
-                    {
-                        textBox.Text = Math.Min(Math.Max(Convert.ToInt32(textBox.Text), item.widget.minValue), item.widget.maxValue).ToString();
-                        Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
-                    }
-                    else if (!textBox.Text.IsNumeric())
-                    {
-                        LogConsole.Instance.Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
-                        textBox.Text = item.widget.minValue.ToString();
-                        Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
-                    }
-
-                    textBox.TextChanged += SetValue_OnChange;
-                    break;
                 case ComboBox comboBox:
                     Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), comboBox.Enabled ? item.widget.onValue : item.widget.offValue);
                     break;
@@ -466,7 +460,25 @@ namespace EdiZonDebugger
                     break;
             }
         }
+        private void TextBox_OnPress(object sender, KeyEventArgs e)
+        {
+            var textBox = (TextBox)sender;
 
+            var list = (List<object>)textBox.Tag;
+            var value = Convert.ToInt64(list[0]);
+            var item = (EdiZonConfig.VersionConfig.Item)list[1];
+
+            if (e.KeyCode == Keys.Left)
+                value -= 1;
+            else if (e.KeyCode == Keys.Right)
+                value += 1;
+
+            value = (uint)Math.Min(Math.Max(value, item.widget.minValue), item.widget.maxValue);
+            list[0] = value;
+
+            textBox.Text = item.widget.preEquation == null ? value.ToString() : Lua.ExecuteCalculation(item.widget.preEquation, value).ToString();
+            Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.postEquation == null ? value : Lua.ExecuteCalculation(item.widget.postEquation, value));
+        }
         #endregion
     }
 }

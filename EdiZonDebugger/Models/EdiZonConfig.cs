@@ -16,9 +16,15 @@ namespace EdiZonDebugger.Models
 
         public class VersionConfig
         {
+            private bool _shouldSerializeEncoding = true;
+            public bool ShouldSerializeencoding() => _shouldSerializeEncoding;
+            public void SetShouldSerializeEncoding(bool value) => _shouldSerializeEncoding = value;
+
             public List<string> saveFilePaths { get; set; }
             public string files { get; set; }
             public string filetype { get; set; }
+
+            public string encoding { get; set; }
 
             public List<Item> items { get; set; }
 
@@ -88,8 +94,11 @@ namespace EdiZonDebugger.Models
                     public List<string> listItemNames { get; set; }
                     public List<uint> listItemValues { get; set; }
 
+                    //Display Equation, only gets displayed, doesn't change the value itself
                     public string preEquation { get; set; }
+                    //Equation executed when value is about to be written to the save file
                     public string postEquation { get; set; }
+                    //Equation executed when value is about to be read from the save file
                     public string postEquationInverse { get; set; }
                 }
             }
