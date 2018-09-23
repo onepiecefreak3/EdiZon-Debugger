@@ -168,6 +168,7 @@ namespace EdiZonDebugger
 
             categoriesListBox.Items.Clear();
             versionComboBox.Items.Clear();
+            versionComboBox.Text = "";
 
             UpdateUI();
         }
@@ -399,7 +400,16 @@ namespace EdiZonDebugger
                     };
 
                     if (validItem)
+                    {
                         (itemControl as TextBox).TextChanged += SetValue_OnChange;
+                        (itemControl as TextBox).KeyPress += (s, e) => 
+                        {
+                            if (!char.IsControl(e.KeyChar) && !char.IsDigit(e.KeyChar) && (e.KeyChar != '.'))
+                            {
+                                e.Handled = true;
+                            }
+                        };
+                    }
                     break;
                 case "bool":
                     validItem = item.widget.onValue == Convert.ToUInt32(luaValue) || item.widget.offValue == Convert.ToUInt32(luaValue);
@@ -447,12 +457,6 @@ namespace EdiZonDebugger
                     if (!String.IsNullOrEmpty(textBox.Text) && textBox.Text.IsNumeric())
                     {
                         textBox.Text = Math.Min(Math.Max(Convert.ToInt32(textBox.Text), item.widget.minValue), item.widget.maxValue).ToString();
-                        Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
-                    }
-                    else if (!textBox.Text.IsNumeric())
-                    {
-                        LogConsole.Instance.Log($"\"{textBox.Text}\" is invalid. Only numeric inputs are allowed.", LogLevel.ERROR);
-                        textBox.Text = item.widget.minValue.ToString();
                         Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), Convert.ToInt32(textBox.Text));
                     }
 
