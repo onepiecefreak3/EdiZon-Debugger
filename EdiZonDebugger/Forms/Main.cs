@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 using EdiZonDebugger.Models;
 using EdiZonDebugger.Helper;
 
-using vJine.Lua;
+using LuaWrapper;
 
 namespace EdiZonDebugger
 {
@@ -26,7 +26,7 @@ namespace EdiZonDebugger
         Dictionary<string, string> _saveFilePath = null;
         Dictionary<string, string> _luaScriptPath = null;
 
-        Dictionary<string, EdiZonConfig.VersionConfig> _config = null;
+        EdiZonConfig _config = null;
         Dictionary<string, LuaContext> _luaInstance = null;
 
         string _currentVersion = null;
@@ -71,13 +71,13 @@ namespace EdiZonDebugger
 
         private void extractEditedSaveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            //var sf = new SaveFileDialog();
+            var sf = new SaveFileDialog();
 
-            //if (sf.ShowDialog() == DialogResult.OK)
-            //{
-            //    var save = Lua.GetModifiedSaveBuffer(_luaInstance[_currentVersion]);
-            //    File.WriteAllBytes(sf.FileName, save);
-            //}
+            if (sf.ShowDialog() == DialogResult.OK)
+            {
+                var save = Lua.GetModifiedSaveBuffer(_luaInstance[_currentVersion]);
+                File.WriteAllBytes(sf.FileName, save);
+            }
         }
 
         private void versionComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -95,10 +95,10 @@ namespace EdiZonDebugger
         #region Functions
         private void UpdateUI()
         {
-            var opened = _config != null && _luaInstance != null;
+            var opened = _config?.configs != null && _luaInstance != null;
 
             closeToolStripMenuItem.Enabled = opened;
-            //extractEditedSaveToolStripMenuItem.Enabled = opened;
+            extractEditedSaveToolStripMenuItem.Enabled = opened;
             categoriesListBox.Enabled = opened;
             groupBox1.Enabled = opened;
             versionComboBox.Enabled = opened;
@@ -110,7 +110,7 @@ namespace EdiZonDebugger
 
             versionComboBox.Items.Clear();
 
-            foreach (var item in _config)
+            foreach (var item in _config?.configs)
                 versionComboBox.Items.Add(item.Key);
 
             versionComboBox.SelectedIndexChanged += versionComboBox_SelectedIndexChanged;
@@ -123,10 +123,10 @@ namespace EdiZonDebugger
 
             categoriesListBox.Items.Clear();
 
-            if (_config[_currentVersion].items.Any(i => i.category == null))
+            if (_config?.configs[_currentVersion].items.Any(i => i.category == null) ?? false)
                 categoriesListBox.Items.Add("No Category");
 
-            foreach (var cat in _config[_currentVersion].items.Where(i => i.category != null).Select(i => i.category).Distinct())
+            foreach (var cat in _config?.configs[_currentVersion].items.Where(i => i.category != null).Select(i => i.category).Distinct())
                 categoriesListBox.Items.Add(cat);
 
             categoriesListBox.SelectedIndexChanged += categoriesListBox_SelectedIndexChanged;
@@ -149,7 +149,7 @@ namespace EdiZonDebugger
             };
             groupBox1.Controls.Add(panel);
 
-            foreach (var item in _config[_currentVersion].items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
+            foreach (var item in _config?.configs[_currentVersion].items.Where(i => i.category == (string)categoriesListBox.SelectedItem))
             {
                 AddItem(panel, item, p);
                 p = new Point(p.X, p.Y + 30);
@@ -168,6 +168,9 @@ namespace EdiZonDebugger
 
             categoriesListBox.Items.Clear();
             versionComboBox.Items.Clear();
+            versionComboBox.Text = "";
+
+            BetaLabel.Text = "Beta:";
 
             UpdateUI();
         }
@@ -182,19 +185,19 @@ namespace EdiZonDebugger
                 CloseConfig();
                 return;
             }
-            foreach (var item in _config)
+            foreach (var item in _config?.configs)
             {
                 _currentVersion = item.Key;
 
                 if (!OpenSaveFile(out error))
                 {
-                    LogConsole.Instance.Log($"Failed to load save file for version \"{item.Key}\":" + error, LogLevel.FATAL);
+                    LogConsole.Instance.Log($"Failed to load save file for version \"{item.Key}\": " + error, LogLevel.FATAL);
                     CloseConfig();
                     return;
                 }
                 if (!OpenScript(out error))
                 {
-                    LogConsole.Instance.Log($"Failed to load script file for version \"{item.Key}\":" + error, LogLevel.FATAL);
+                    LogConsole.Instance.Log($"Failed to load script file for version \"{item.Key}\": " + error, LogLevel.FATAL);
                     CloseConfig();
                     return;
                 }
@@ -207,6 +210,12 @@ namespace EdiZonDebugger
         private bool OpenConfig(string file, out string message, List<string> searchedJsons = null)
         {
             var content = File.ReadAllText(file);
+
+            if (Support.IsBeta(content))
+                BetaLabel.Text = "Beta: True";
+            else
+                BetaLabel.Text = "Beta: False";
+
             if (Support.IsUsingInstead(content, out var config))
             {
                 var combPath = Path.Combine(_configFolder, config.useInstead);
@@ -238,9 +247,9 @@ namespace EdiZonDebugger
 
             //Get directories
             var paths = new List<string> { _saveFolder };
-            if (_config[_currentVersion].saveFilePaths.Count > 0)
+            if (_config?.configs[_currentVersion].saveFilePaths.Count > 0)
             {
-                paths.AddRange(GetSavePaths(_saveFolder, _config[_currentVersion].saveFilePaths.ToArray()).ToList());
+                paths.AddRange(GetSavePaths(_saveFolder, _config?.configs[_currentVersion].saveFilePaths.ToArray()).ToList());
                 if (!paths.Any())
                 {
                     message = "No directories found.";
@@ -249,7 +258,7 @@ namespace EdiZonDebugger
             }
 
             //Get files
-            var files = GetSaveFiles(paths.ToArray(), _config[_currentVersion].files).ToList();
+            var files = GetSaveFiles(paths.ToArray(), _config?.configs[_currentVersion].files).ToList();
             if (!files.Any())
             {
                 message = "No files found.";
@@ -321,7 +330,7 @@ namespace EdiZonDebugger
                 _luaInstance = new Dictionary<string, LuaContext>();
 
             var context = new LuaContext();
-            if (!Lua.InitializeScript(ref context, _luaScriptPath[_currentVersion], _saveFilePath[_currentVersion], _config[_currentVersion].encoding, out var error))
+            if (!Lua.InitializeScript(ref context, _luaScriptPath[_currentVersion], _saveFilePath[_currentVersion], _config?.configs[_currentVersion].encoding, out var error))
             {
                 message = error;
                 return false;
@@ -335,7 +344,7 @@ namespace EdiZonDebugger
             if (_luaScriptPath == null)
                 _luaScriptPath = new Dictionary<string, string>();
 
-            var path = Path.Combine(_scriptFolder, $"{_config[_currentVersion].filetype}.lua");
+            var path = Path.Combine(_scriptFolder, $"{_config?.configs[_currentVersion].filetype}.lua");
 
             if (!File.Exists(path))
             {
@@ -357,17 +366,17 @@ namespace EdiZonDebugger
 
         private bool CheckConfig(out string message)
         {
-            if (_config == null)
+            if (_config?.configs == null)
             {
                 message = "Config not set";
                 return false;
             }
-            if (!_config.ContainsKey(_currentVersion))
+            if (!_config?.configs.ContainsKey(_currentVersion) ?? false)
             {
                 message = "Version doesn't exist";
                 return false;
             }
-            if (_config[_currentVersion].filetype == null)
+            if (_config?.configs[_currentVersion].filetype == null)
             {
                 message = "FileType not set";
                 return false;
@@ -402,11 +411,12 @@ namespace EdiZonDebugger
                         Enabled = validItem,
                         ReadOnly = true
                     };
-                    (itemControl as TextBox).Tag = new List<object>();
+                    itemControl.Tag = new List<object>();
                     if (validItem)
                     {
-                        (itemControl as TextBox).KeyDown += TextBox_OnPress;
-                        ((itemControl as TextBox).Tag as List<object>).Add(luaValue);
+                        itemControl.KeyDown += TextBox_OnDown;            //To edit int value by +/- stepSize by arrow keys
+                        (itemControl.Tag as List<object>).Add(item);
+                        (itemControl.Tag as List<object>).Add(luaValue);
                     }
                     break;
                 case "bool":
@@ -420,7 +430,10 @@ namespace EdiZonDebugger
                     };
 
                     if (validItem)
+                    {
                         (itemControl as CheckBox).CheckedChanged += SetValue_OnChange;
+                        itemControl.Tag = item;
+                    }
                     break;
                 case "list":
                     validItem = item.widget.listItemValues.Contains(luaValue);
@@ -433,16 +446,15 @@ namespace EdiZonDebugger
                     };
 
                     if (validItem)
+                    {
                         (itemControl as ComboBox).SelectedIndexChanged += SetValue_OnChange;
+                        itemControl.Tag = item;
+                    }
                     break;
             }
             if (!validItem)
                 LogConsole.Instance.Log($"Item \"{item.name}\"{((String.IsNullOrEmpty(item.category)) ? "" : $" in Category \"{item.category}\"")} of type \"{item.widget.type}\" has an invalid value of {luaValue.ToString()}.\"\r\n", LogLevel.ERROR);
 
-            if (itemControl is TextBox)
-                (itemControl.Tag as List<object>).Add(item);
-            else
-                itemControl.Tag = item;
             itemControl.Location = initPoint;
 
             panel.Controls.Add(itemControl);
@@ -460,21 +472,21 @@ namespace EdiZonDebugger
                     break;
             }
         }
-        private void TextBox_OnPress(object sender, KeyEventArgs e)
+        private void TextBox_OnDown(object sender, KeyEventArgs e)
         {
             var textBox = (TextBox)sender;
 
             var list = (List<object>)textBox.Tag;
-            var value = Convert.ToInt64(list[0]);
-            var item = (EdiZonConfig.VersionConfig.Item)list[1];
+            var value = Convert.ToInt64(list[1]);
+            var item = (EdiZonConfig.VersionConfig.Item)list[0];
 
             if (e.KeyCode == Keys.Left)
-                value -= 1;
+                value -= item.widget.stepSize ?? 1;
             else if (e.KeyCode == Keys.Right)
-                value += 1;
+                value += item.widget.stepSize ?? 1;
 
             value = (uint)Math.Min(Math.Max(value, item.widget.minValue), item.widget.maxValue);
-            list[0] = value;
+            list[1] = value;
 
             textBox.Text = item.widget.preEquation == null ? value.ToString() : Lua.ExecuteCalculation(item.widget.preEquation, value).ToString();
             Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.postEquation == null ? value : Lua.ExecuteCalculation(item.widget.postEquation, value));

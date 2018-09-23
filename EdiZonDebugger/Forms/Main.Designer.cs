@@ -39,6 +39,7 @@
             this.errorTextBox = new System.Windows.Forms.RichTextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.versionComboBox = new System.Windows.Forms.ComboBox();
+            this.BetaLabel = new System.Windows.Forms.Label();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -65,14 +66,14 @@
             // openToolStripMenuItem
             // 
             this.openToolStripMenuItem.Name = "openToolStripMenuItem";
-            this.openToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.openToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.openToolStripMenuItem.Text = "&Open Config";
             this.openToolStripMenuItem.Click += new System.EventHandler(this.openToolStripMenuItem_Click);
             // 
             // closeToolStripMenuItem
             // 
             this.closeToolStripMenuItem.Name = "closeToolStripMenuItem";
-            this.closeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.closeToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.closeToolStripMenuItem.Text = "&Close Config";
             this.closeToolStripMenuItem.Click += new System.EventHandler(this.closeToolStripMenuItem_Click);
             // 
@@ -80,7 +81,7 @@
             // 
             this.extractEditedSaveToolStripMenuItem.Enabled = false;
             this.extractEditedSaveToolStripMenuItem.Name = "extractEditedSaveToolStripMenuItem";
-            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.extractEditedSaveToolStripMenuItem.Size = new System.Drawing.Size(172, 22);
             this.extractEditedSaveToolStripMenuItem.Text = "&Extract Edited Save";
             this.extractEditedSaveToolStripMenuItem.Click += new System.EventHandler(this.extractEditedSaveToolStripMenuItem_Click);
             // 
@@ -89,9 +90,9 @@
             this.categoriesListBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left)));
             this.categoriesListBox.FormattingEnabled = true;
-            this.categoriesListBox.Location = new System.Drawing.Point(12, 53);
+            this.categoriesListBox.Location = new System.Drawing.Point(12, 67);
             this.categoriesListBox.Name = "categoriesListBox";
-            this.categoriesListBox.Size = new System.Drawing.Size(120, 238);
+            this.categoriesListBox.Size = new System.Drawing.Size(120, 225);
             this.categoriesListBox.TabIndex = 1;
             this.categoriesListBox.SelectedIndexChanged += new System.EventHandler(this.categoriesListBox_SelectedIndexChanged);
             // 
@@ -101,7 +102,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.groupBox1.Location = new System.Drawing.Point(138, 27);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(318, 264);
+            this.groupBox1.Size = new System.Drawing.Size(318, 265);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             // 
@@ -116,7 +117,7 @@
             this.errorTextBox.Location = new System.Drawing.Point(462, 43);
             this.errorTextBox.Name = "errorTextBox";
             this.errorTextBox.ReadOnly = true;
-            this.errorTextBox.Size = new System.Drawing.Size(326, 248);
+            this.errorTextBox.Size = new System.Drawing.Size(326, 249);
             this.errorTextBox.TabIndex = 0;
             this.errorTextBox.Text = "";
             // 
@@ -138,11 +139,21 @@
             this.versionComboBox.TabIndex = 5;
             this.versionComboBox.SelectedIndexChanged += new System.EventHandler(this.versionComboBox_SelectedIndexChanged);
             // 
+            // BetaLabel
+            // 
+            this.BetaLabel.AutoSize = true;
+            this.BetaLabel.Location = new System.Drawing.Point(12, 51);
+            this.BetaLabel.Name = "BetaLabel";
+            this.BetaLabel.Size = new System.Drawing.Size(32, 13);
+            this.BetaLabel.TabIndex = 6;
+            this.BetaLabel.Text = "Beta:";
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 300);
+            this.Controls.Add(this.BetaLabel);
             this.Controls.Add(this.versionComboBox);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.errorTextBox);
@@ -172,6 +183,7 @@
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.ToolStripMenuItem extractEditedSaveToolStripMenuItem;
         private System.Windows.Forms.ComboBox versionComboBox;
+        private System.Windows.Forms.Label BetaLabel;
     }
 }
 

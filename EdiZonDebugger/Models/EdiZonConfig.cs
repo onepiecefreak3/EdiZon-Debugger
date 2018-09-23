@@ -12,6 +12,7 @@ namespace EdiZonDebugger.Models
     public class EdiZonConfig
     {
         public string useInstead { get; set; }
+        public bool beta { get; set; }
         public Dictionary<string, VersionConfig> configs;
 
         public class VersionConfig

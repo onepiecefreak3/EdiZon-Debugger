@@ -70,17 +70,24 @@ namespace EdiZonDebugger
             }
         }
 
-        public static bool TryParseConfig(string content, out Dictionary<string, EdiZonConfig.VersionConfig> config, out string message)
+        public static bool IsBeta(string content)
+        {
+            var config = JsonConvert.DeserializeObject<EdiZonConfig>(content);
+
+            return config.beta;
+        }
+
+        public static bool TryParseConfig(string content, out EdiZonConfig config, out string message)
         {
             message = "";
 
             if (!TryParseJObject(content, out config, out message))
                 return false;
 
-            config = new Dictionary<string, EdiZonConfig.VersionConfig>();
+            config.configs = new Dictionary<string, EdiZonConfig.VersionConfig>();
             foreach (var obj in JObject.Parse(content))
-                if (obj.Key != "useInstead")
-                    config.Add(obj.Key, obj.Value.ToObject<EdiZonConfig.VersionConfig>());
+                if (obj.Key != "useInstead" && obj.Key != "beta")
+                    config.configs.Add(obj.Key, obj.Value.ToObject<EdiZonConfig.VersionConfig>());
 
             return true;
         }

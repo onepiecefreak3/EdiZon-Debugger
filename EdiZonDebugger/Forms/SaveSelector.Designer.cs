@@ -68,6 +68,7 @@
             this.Controls.Add(this.label1);
             this.Controls.Add(this.OKBtn);
             this.Controls.Add(this.saveComboBox);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedToolWindow;
             this.Name = "SaveSelector";
             this.Text = "Save Selector";
             this.ResumeLayout(false);

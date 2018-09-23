@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using vJine.Lua;
 using System.IO;
 
 using EdiZonDebugger.Helper;
+
+using LuaWrapper;
 
 namespace EdiZonDebugger
 {
@@ -19,61 +20,73 @@ namespace EdiZonDebugger
             try
             {
                 luaContext = new LuaContext();
-                luaContext.reg("edizon.getSaveFileBuffer", getSaveFileBuffer(saveFile));
-                luaContext.reg("edizon.getSaveFileString", getSaveFileString(saveFile, encoding));
-                luaContext.reg("print", new Action<string>((string s) =>
-                {
-                    LogConsole.Instance.Log(s, LogLevel.LUA);
-                }));
-                luaContext.load(luaFile);
+
+                luaContext.RegisterFunction("edizon", "getSaveFileBuffer", getSaveFileBuffer(saveFile));
+                luaContext.RegisterFunction("edizon", "getSaveFileString", getSaveFileString(saveFile, encoding));
+                luaContext.RegisterFunction("", "print", Print());
+
+                luaContext.LoadFromFile(luaFile);
+                luaContext.Execute();
             }
             catch (Exception e)
             {
-                if (e is FormatException)
-                    message = "vJine.Lua is a 32bit only library but the app expects 64bit.";
-                else
-                    message = e.Message;
-
+                message = e.Message;
                 return false;
             }
 
             return true;
         }
 
-        public static object ExecuteCalculation(string calc, long input)
+        public static object ExecuteCalculation(string calc, double input)
         {
             var lua = new LuaContext();
-            lua.set("value", input);
-            var res = lua.inject("return " + calc);
+            lua.LoadFromString(
+                $"function exec(value)" +
+                $"return {calc}" +
+                $"end"
+                );
 
-            return Convert.ToUInt32(res.First());
+            lua.Execute();
+            var res = lua.Execute("exec", input);
+
+            return Convert.ToUInt32(res.result.First());
         }
 
         #region Script functions
         public static object GetValueFromSaveFile(LuaContext luaContext, string[] strArgs, int[] intArgs)
         {
-            luaContext.reg("edizon.getStrArgs", getStrArgs(strArgs));
-            luaContext.reg("edizon.getIntArgs", getIntArgs(intArgs));
+            luaContext.RegisterFunction("edizon", "getStrArgs", getStrArgs(strArgs));
+            luaContext.RegisterFunction("edizon", "getIntArgs", getIntArgs(intArgs));
 
-            var res = luaContext.exec("getValueFromSaveFile");
+            var res = luaContext.Execute("getValueFromSaveFile");
 
-            return res.First();
+            if (!res.success)
+            {
+                LogConsole.Instance.Log(res.result.Where(r => r != null).Aggregate("", (a, b) => a + b.ToString() + Environment.NewLine), LogLevel.LUA);
+                return null;
+            }
+
+            return res.result.First();
         }
 
         public static void SetValueInSaveFile(LuaContext luaContext, string[] strArgs, int[] intArgs, object value)
         {
-            luaContext.reg("edizon.getStrArgs", getStrArgs(strArgs));
-            luaContext.reg("edizon.getIntArgs", getIntArgs(intArgs));
+            luaContext.RegisterFunction("edizon", "getStrArgs", getStrArgs(strArgs));
+            luaContext.RegisterFunction("edizon", "getIntArgs", getIntArgs(intArgs));
 
-            luaContext.exec("setValueInSaveFile", value);
+            luaContext.Execute("setValueInSaveFile", value);
         }
 
-        //public static byte[] GetModifiedSaveBuffer(LuaContext luaContext)
-        //{
-        //    var res = luaContext.exec("getModifiedSaveFile");
+        public static byte[] GetModifiedSaveBuffer(LuaContext luaContext)
+        {
+            var res = luaContext.Execute("getModifiedSaveFile");
+            var firstRes = res.result.First();
 
-        //    return (byte[])res.First();
-        //}
+            if (firstRes is object[] save)
+                return save.Select(x => Convert.ToByte(x)).ToArray();
+
+            return new byte[0];
+        }
         #endregion
 
         #region Delegates
