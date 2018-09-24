@@ -19,6 +19,8 @@ namespace EdiZonDebugger
 {
     public partial class Main : Form
     {
+        List<int> _validMultipliers = new List<int> { 1, 10, 100, 1000, 10000 };
+
         string _scriptFolder = "script";
         string _configFolder = "config";
         string _saveFolder = "save";
@@ -49,6 +51,18 @@ namespace EdiZonDebugger
         }
 
         #region Events
+        private void MultiplierTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            var index = _validMultipliers.FindIndex(x => x == Convert.ToInt32(MultiplierTextBox.Text));
+
+            if (e.KeyCode == Keys.Left)
+                if (index - 1 < 0) MultiplierTextBox.Text = _validMultipliers[_validMultipliers.Count - 1].ToString();
+                else MultiplierTextBox.Text = _validMultipliers[index - 1].ToString();
+            else if (e.KeyCode == Keys.Right)
+                if (index + 1 >= _validMultipliers.Count) MultiplierTextBox.Text = _validMultipliers[0].ToString();
+                else MultiplierTextBox.Text = _validMultipliers[index + 1].ToString();
+        }
+
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
             CloseConfig();
@@ -207,7 +221,7 @@ namespace EdiZonDebugger
             UpdateVersions();
         }
 
-        private bool OpenConfig(string file, out string message, List<string> searchedJsons = null)
+        private bool OpenConfig(string file, out string message, int loop = 0)
         {
             var content = File.ReadAllText(file);
 
@@ -220,17 +234,13 @@ namespace EdiZonDebugger
             {
                 var combPath = Path.Combine(_configFolder, config.useInstead);
 
-                if (searchedJsons == null)
-                    searchedJsons = new List<string>();
-
-                if (!searchedJsons.Contains(combPath))
+                if (loop < 5)
                 {
-                    searchedJsons.Add(combPath);
-                    return OpenConfig(combPath, out message, searchedJsons);
+                    return OpenConfig(combPath, out message, loop + 1);
                 }
                 else
                 {
-                    message = "UseInstead loop detected.";
+                    message = "UseInstead redirected more than 5 times. Loading config aborted.";
                     return false;
                 }
             }
@@ -396,8 +406,8 @@ namespace EdiZonDebugger
             Control itemControl = null;
 
             var luaValue = Convert.ToUInt32(Lua.GetValueFromSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray()));
-            if (item.widget.postEquationInverse != null)
-                luaValue = Convert.ToUInt32(Lua.ExecuteCalculation(item.widget.postEquationInverse, luaValue));
+            if (item.widget.readEquation != null)
+                luaValue = Convert.ToUInt32(Lua.ExecuteCalculation(item.widget.readEquation, luaValue));
 
             bool validItem = true;
             switch (item.widget.type)
@@ -407,7 +417,7 @@ namespace EdiZonDebugger
 
                     itemControl = new TextBox
                     {
-                        Text = validItem ? item.widget.preEquation != null ? Lua.ExecuteCalculation(item.widget.preEquation, luaValue).ToString() : luaValue.ToString() : "???",
+                        Text = validItem ? luaValue.ToString() : "???",
                         Enabled = validItem,
                         ReadOnly = true
                     };
@@ -481,15 +491,15 @@ namespace EdiZonDebugger
             var item = (EdiZonConfig.VersionConfig.Item)list[0];
 
             if (e.KeyCode == Keys.Left)
-                value -= item.widget.stepSize ?? 1;
+                value -= (item.widget.stepSize ?? 1) * Convert.ToInt32(MultiplierTextBox.Text);
             else if (e.KeyCode == Keys.Right)
-                value += item.widget.stepSize ?? 1;
+                value += (item.widget.stepSize ?? 1) * Convert.ToInt32(MultiplierTextBox.Text);
 
             value = (uint)Math.Min(Math.Max(value, item.widget.minValue), item.widget.maxValue);
             list[1] = value;
 
-            textBox.Text = item.widget.preEquation == null ? value.ToString() : Lua.ExecuteCalculation(item.widget.preEquation, value).ToString();
-            Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.postEquation == null ? value : Lua.ExecuteCalculation(item.widget.postEquation, value));
+            textBox.Text = value.ToString();
+            Lua.SetValueInSaveFile(_luaInstance[_currentVersion], item.strArgs.ToArray(), item.intArgs.ToArray(), item.widget.writeEquation == null ? value : Lua.ExecuteCalculation(item.widget.writeEquation, value));
         }
         #endregion
     }

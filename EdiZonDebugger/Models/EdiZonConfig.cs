@@ -95,12 +95,10 @@ namespace EdiZonDebugger.Models
                     public List<string> listItemNames { get; set; }
                     public List<uint> listItemValues { get; set; }
 
-                    //Display Equation, only gets displayed, doesn't change the value itself
-                    public string preEquation { get; set; }
                     //Equation executed when value is about to be written to the save file
-                    public string postEquation { get; set; }
+                    public string writeEquation { get; set; }
                     //Equation executed when value is about to be read from the save file
-                    public string postEquationInverse { get; set; }
+                    public string readEquation { get; set; }
                 }
             }
         }

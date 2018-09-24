@@ -40,6 +40,8 @@
             this.label1 = new System.Windows.Forms.Label();
             this.versionComboBox = new System.Windows.Forms.ComboBox();
             this.BetaLabel = new System.Windows.Forms.Label();
+            this.MultiplierLabel = new System.Windows.Forms.Label();
+            this.MultiplierTextBox = new System.Windows.Forms.TextBox();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -92,7 +94,7 @@
             this.categoriesListBox.FormattingEnabled = true;
             this.categoriesListBox.Location = new System.Drawing.Point(12, 67);
             this.categoriesListBox.Name = "categoriesListBox";
-            this.categoriesListBox.Size = new System.Drawing.Size(120, 225);
+            this.categoriesListBox.Size = new System.Drawing.Size(120, 264);
             this.categoriesListBox.TabIndex = 1;
             this.categoriesListBox.SelectedIndexChanged += new System.EventHandler(this.categoriesListBox_SelectedIndexChanged);
             // 
@@ -102,7 +104,7 @@
             | System.Windows.Forms.AnchorStyles.Left)));
             this.groupBox1.Location = new System.Drawing.Point(138, 27);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(318, 265);
+            this.groupBox1.Size = new System.Drawing.Size(318, 330);
             this.groupBox1.TabIndex = 3;
             this.groupBox1.TabStop = false;
             // 
@@ -117,7 +119,7 @@
             this.errorTextBox.Location = new System.Drawing.Point(462, 43);
             this.errorTextBox.Name = "errorTextBox";
             this.errorTextBox.ReadOnly = true;
-            this.errorTextBox.Size = new System.Drawing.Size(326, 249);
+            this.errorTextBox.Size = new System.Drawing.Size(326, 314);
             this.errorTextBox.TabIndex = 0;
             this.errorTextBox.Text = "";
             // 
@@ -148,11 +150,34 @@
             this.BetaLabel.TabIndex = 6;
             this.BetaLabel.Text = "Beta:";
             // 
+            // MultiplierLabel
+            // 
+            this.MultiplierLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.MultiplierLabel.AutoSize = true;
+            this.MultiplierLabel.Location = new System.Drawing.Point(12, 344);
+            this.MultiplierLabel.Name = "MultiplierLabel";
+            this.MultiplierLabel.Size = new System.Drawing.Size(51, 13);
+            this.MultiplierLabel.TabIndex = 7;
+            this.MultiplierLabel.Text = "Multiplier:";
+            // 
+            // MultiplierTextBox
+            // 
+            this.MultiplierTextBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+            this.MultiplierTextBox.Location = new System.Drawing.Point(69, 341);
+            this.MultiplierTextBox.Name = "MultiplierTextBox";
+            this.MultiplierTextBox.ReadOnly = true;
+            this.MultiplierTextBox.Size = new System.Drawing.Size(63, 20);
+            this.MultiplierTextBox.TabIndex = 0;
+            this.MultiplierTextBox.Text = "1";
+            this.MultiplierTextBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.MultiplierTextBox_KeyDown);
+            // 
             // Main
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 300);
+            this.ClientSize = new System.Drawing.Size(800, 364);
+            this.Controls.Add(this.MultiplierTextBox);
+            this.Controls.Add(this.MultiplierLabel);
             this.Controls.Add(this.BetaLabel);
             this.Controls.Add(this.versionComboBox);
             this.Controls.Add(this.label1);
@@ -184,6 +209,8 @@
         private System.Windows.Forms.ToolStripMenuItem extractEditedSaveToolStripMenuItem;
         private System.Windows.Forms.ComboBox versionComboBox;
         private System.Windows.Forms.Label BetaLabel;
+        private System.Windows.Forms.Label MultiplierLabel;
+        private System.Windows.Forms.TextBox MultiplierTextBox;
     }
 }
 

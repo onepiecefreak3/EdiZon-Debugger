@@ -41,8 +41,8 @@ namespace EdiZonDebugger
         {
             var lua = new LuaContext();
             lua.LoadFromString(
-                $"function exec(value)" +
-                $"return {calc}" +
+                $"function exec(value)\r\n" +
+                $"return {calc}\r\n" +
                 $"end"
                 );
 
