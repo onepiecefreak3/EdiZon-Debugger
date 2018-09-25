@@ -5,7 +5,7 @@ This tool should provide help in debugging JSON configs and LUA scripts for use 
 
 ## Technical details
 You need to have .NET 4.7.2 installed to use this tool.<br>
-The lua interpretation utilizes vJine.Lua 0.1.0.13, which is based on Lua 5.3. There were no changes made to its source code and is just used to load up and execute the lua scripts in the "script" folder.
+The lua interpretation utilizes LuaWrapperCS, which is based on Lua 5.3, by @WerWolv98, who gladly reimplemented needed LUA behaviour through it, which other libraries didn't offer as we needed. I helped and gave some ideas, but all in all there were no changes made to its source code by me and is just used to load up and execute the lua scripts in the "script" folder.
 
 ## Setup
 To get the debugger set up, you need to either start the application once or create all needed folders yourself.<br>
@@ -30,5 +30,5 @@ All items that produce errors, because they were out of range of the given widge
 Those errors will tell you which items had which errors, and help you pinpoint and resolving it.
 
 ## Extracting a save
-Beside the functionality of pinpointing errors, one can also extract a save file modified with "File" > "Extract Edited Save". It's basically an EdiZon on PC, so you can also edit every save file on PC with it, if a JSON config and LUA script is given.<br>
-But who wants that if EdiZon itself works directly on Switch and makes things so muc more comfortable ;)
+Beside the functionality of pinpointing errors, one can also extract a modified save file with "File" > "Extract Edited Save". It's basically an EdiZon on PC, so you can also edit every save file on PC with it, if a JSON config and LUA script is given.<br>
+But who wants that if EdiZon itself works directly on Switch and makes things so much more comfortable ;)
